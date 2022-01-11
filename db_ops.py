@@ -4,8 +4,9 @@ import pypyodbc
 
 db = pypyodbc.connect(
     'Driver={SQL Server};'
-    'Server=DESKTOP-7HT3QCT;'
+    'Server=NBS086;'
     'Database=p2p;'
+    #'Trusted_Connection=Yes'
     'UID=p2pAdmin;'
     'PWD=543543;'
 )
@@ -110,4 +111,4 @@ print(db_add_user("username1", "password", True, "hi", "hi2"))
 '''
 
 if __name__ == '__main__':
-    pass
+    print (get_active_users())

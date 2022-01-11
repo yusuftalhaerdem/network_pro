@@ -8,12 +8,15 @@ userIsBusy = False
 
 def ask_user_for_active_user_selection(active_user_list):
     print("active users:")
+    if len(active_user_list) == 0:
+        print("Your friend list is empty. You can search users and add them as a friend!")
+        return -1
     for number in range(len(active_user_list)):
         print("[" + str(number) + "]" + active_user_list[number])
 
     while True:
         try:
-            user_no = int(input("please enter the the [no] of user you want to chat with"))
+            user_no = int(input("please enter the [no] of user you want to chat with"))
             if user_no == -1:
                 return -1
             elif user_no < len(active_user_list):
@@ -186,7 +189,7 @@ class p2pChatCentralClient(threading.Thread):  # CENTRAL_CLIENT THREAD
                         choice = str(input())
                         match choice:
                             case "1":  # search
-                                searchedUsersIPandPort = self.searchUser()  #
+                                searchedUsersIPandPort, username = self.searchUser()  #
                                 if searchedUsersIPandPort == "back":
                                     continue
                                 while True:
@@ -194,7 +197,7 @@ class p2pChatCentralClient(threading.Thread):  # CENTRAL_CLIENT THREAD
                                                         "chat list press 1, otherwise 2."))
                                     match addUser:
                                         case "1":
-                                            self.conversationList.append(searchedUsersIPandPort)  # todo: dunno2
+                                            self.conversationList.append(username)  # todo: dunno2
                                             self.userStatus = True
                                             print("User successfully added in your chat list.\n"
                                                   "If you want to chat with the people in your chat list,\n"
@@ -230,8 +233,16 @@ class p2pChatCentralClient(threading.Thread):  # CENTRAL_CLIENT THREAD
                                 active_user_str = socket_client.recv(MESSAGE_SIZE).decode(FORMAT)
                                 active_user_list = active_user_str.split(",")
 
-                                user_no = ask_user_for_active_user_selection(active_user_list)
-                                selected_user_name = active_user_list[user_no]
+                                activeUserInTheChatLst = list()
+                                for i in active_user_list:
+                                    for j in self.conversationList:
+                                        if i == j:
+                                            activeUserInTheChatLst.append(i)
+
+                                user_no = ask_user_for_active_user_selection(activeUserInTheChatLst)
+                                if user_no == -1:
+                                    continue
+                                selected_user_name = activeUserInTheChatLst[user_no]
 
                                 message = "get user info"
                                 socket_client.send(message.encode(FORMAT))
@@ -317,10 +328,10 @@ class p2pChatCentralClient(threading.Thread):  # CENTRAL_CLIENT THREAD
 
             while True:
                 self.nameOfTheUser = str(input(">>Enter the username you want to search:\n"))
-                if self.nameOfTheUser == "":
-                    print("You should enter a username to be able to search one!")
-                else:
+                if self.nameOfTheUser != "":
                     break
+                else:
+                    print("You should enter a username to be able to search one!")
 
             # sends the username to the central server
             centralClient.central_client_socket.send(bytes(self.nameOfTheUser, "utf-8"))
@@ -329,16 +340,19 @@ class p2pChatCentralClient(threading.Thread):  # CENTRAL_CLIENT THREAD
             match searchStatus:
                 case "userCouldNotFound":
                     print("We do not have a user with the username you entered in our system!\n")
-                    return "back"
+                    return "back", ""
                 case "offlineUser":
                     print("The user with the username you entered is not online at the moment. "
                           "You can try again later.\n")
-                    return "back"
+                    return "back", ""
                 case "success":
                     ip, port = centralClient.central_client_socket.recv(1024).decode("utf-8").split(',')
                     searchedUsersIPandPort = [ip, port]
                     print("\nIP address of the user is: " + ip + "\t Port number of the user is: " + port)
-                    return searchedUsersIPandPort
+                    return searchedUsersIPandPort, self.nameOfTheUser
+                case _:
+                    print("Sorry, something went wrong! Try again")
+
 
     def emptyChatList(self):
         self.conversationList = []
