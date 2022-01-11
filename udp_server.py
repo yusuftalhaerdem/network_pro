@@ -27,16 +27,25 @@ def check_connection_updates():
         try:
             index = active_user_list.index(data)
             active_user_list_time[index] = time.time()
+
+            # adds user
         except:
             # add_user_udp(data)
             pass
 
 
-def add_user_udp(username):     # this part is needless
+def add_user_udp(username):  # this part is needless
     active_user_list.append(username)
     active_user_list_time.append(time.time())
     db_ops.active_user(username)
 
+def check_new_users():
+    for active_user in db_ops.get_active_users():
+        if active_user_list.index(active_user) >= 0:
+            continue
+        active_user_list.append(active_user)
+        active_user_list_time.append(time.time())
+        pass
 
 def retrieve_online_status():
     for active_user in db_ops.get_active_users():
@@ -47,7 +56,14 @@ def retrieve_online_status():
 
 def check_online_status():
     for active_user in db_ops.get_active_users():
-        loc = active_user_list.index(active_user)
+        loc = 0
+        try:
+            loc = active_user_list.index(active_user)
+        except:
+            active_user_list.append(active_user)
+            active_user_list_time.append(time.time())
+            loc = active_user_list.index(active_user)
+
         last_check = active_user_list_time[loc]
         if time.time() - last_check > 20:
             print(f"{active_user} is now offline")

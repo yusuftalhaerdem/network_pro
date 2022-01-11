@@ -1,3 +1,5 @@
+# this is just a copy of peer.py, which is created for test purposes
+
 import os, sys, socket, select, threading, _thread, time, datetime
 
 UDPHelloMessage = False

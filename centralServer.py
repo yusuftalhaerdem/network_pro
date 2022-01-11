@@ -46,7 +46,7 @@ class centralServerInterface(threading.Thread):  # MAIN THREAD INTERFACE FOR ALL
                     print("Wrong centralServer Request -> " + str(request) + "\n")
                     self.sendMessage(self.conn, "Wrong centralServer Request!")
 
-    # sendMessage
+    # sends message via given socket
     def sendMessage(self, socket, message):
         socket.send(bytes(message, "utf-8"))
 
@@ -65,7 +65,7 @@ class centralServerInterface(threading.Thread):  # MAIN THREAD INTERFACE FOR ALL
 
 
     def joinToTheSystem(self, conn, addr):
-        # gets the username, password, ip address, and port information
+        # gets the username, password, ip address, and port no
         userNamePasswordIpAddrAndPortData = conn.recv(1024).decode("utf-8")
         userName, password, ipAddr, port = userNamePasswordIpAddrAndPortData.split(',')
 
@@ -83,18 +83,18 @@ class centralServerInterface(threading.Thread):  # MAIN THREAD INTERFACE FOR ALL
             ip_and_port = ip_and_port.split(",")
 
             db_ops.db_login(userName, ip_and_port[0],
-                            ip_and_port[1])  # todo: [problem] port no and ip address varies somehow
+                            ip_and_port[1])  # todo: [solved] port no and ip address varies somehow
             self.sendMessage(conn, "successful ip and port replacements")
-            # i dont want to find its reason so let me try like this
+            # i dont want to find its issue so let me something try like this
             print(ip_and_port[0], ip_and_port[1])
             pass
         else:
             self.sendMessage(conn, "incorrectInfo")
 
     def searchInTheSystem(self, conn, addr):
-        # gets the username to search
+        # gets the username in order to search
         searchedUserName = conn.recv(1024).decode("utf-8")
-        # gets the records in the database
+        # gets the data from mssql database
 
         op_result = db_ops.db_is_user_online(searchedUserName)
         if op_result == "fail":
@@ -105,9 +105,10 @@ class centralServerInterface(threading.Thread):  # MAIN THREAD INTERFACE FOR ALL
             self.sendMessage(conn, "offlineUser")
         else:
             self.sendMessage(conn, "success")
+            conn.recv(1024).decode("utf-8")
             self.sendMessage(conn, (op_result[1] + "," + op_result[2]))
 
-    # kill the thread
+    # kills the thread
     def kill(self):
         self.running = 0
 
@@ -121,18 +122,17 @@ class centralServerInterface(threading.Thread):  # MAIN THREAD INTERFACE FOR ALL
 
     def return_user_ınfo(self, conn,
                          addr):  # todo: check if other user wants to communicate with this one. in somewhere
-        # receives username from client
+        # gets username from client
         username = conn.recv(1024).decode("utf-8")
 
         user_connection_info = db_ops.db_is_user_online(username)
 
-        # returns ip address and port number alon
         self.sendMessage(conn, user_connection_info[1] + "," + user_connection_info[2])
 
         pass
 
 
-class Tcp(threading.Thread):  # CREATE MAIN THREAD FOR "TCP" OPERATIONS
+class Tcp(threading.Thread):  # creates a main thread for tsp
     sockets = []
 
     def __init__(self):
@@ -142,12 +142,12 @@ class Tcp(threading.Thread):  # CREATE MAIN THREAD FOR "TCP" OPERATIONS
         self.server_socket = None
         self.running = 1
 
-    def run(self):  # Run the thread
+    def run(self):  # Runs the thread
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.server_socket.bind((self.HOST, self.PORT))
         self.server_socket.listen(10)
-        # add server socket object to the list of readable connections
+        # add server socket object to connections list
         self.sockets.append(self.server_socket)
 
         print("TCP server started on port " + str(self.PORT) + "\n")
@@ -156,7 +156,7 @@ class Tcp(threading.Thread):  # CREATE MAIN THREAD FOR "TCP" OPERATIONS
             ready_to_read, ready_to_write, in_error = select.select(self.sockets, [], [], 0)
 
             for sock in ready_to_read:
-                # a new connection request recieved
+                # as new connection request arrives
                 if sock == self.server_socket:
                     self.conn, self.addr = self.server_socket.accept()
                     self.sockets.append(self.conn)
@@ -170,8 +170,7 @@ class Tcp(threading.Thread):  # CREATE MAIN THREAD FOR "TCP" OPERATIONS
 
 
 if __name__ == "__main__":
-    # activates threads
+    # we start threads
     tcpThread = Tcp()
     tcpThread.start()
     udp_server.start_udp()
-    # udpThread.start()

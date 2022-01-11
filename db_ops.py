@@ -4,7 +4,7 @@ import pypyodbc
 
 db = pypyodbc.connect(
     'Driver={SQL Server};'
-    'Server=NBS086;'
+    'Server=DESKTOP-7HT3QCT;'
     'Database=p2p;'
     #'Trusted_Connection=Yes'
     'UID=p2pAdmin;'
@@ -20,6 +20,17 @@ def active_user(username):
     cursor.execute(query, (True, username))
     cursor.commit()
 
+'''
+def get_all_users():
+    query = "select u.username from users u"
+    cursor.execute(cursor)
+    usernames = cursor.fetchall()
+    username_list = []
+    for username in usernames:
+        username_list += username
+
+    return username_list
+'''
 
 def get_active_users():
     query = "select u.username from users u where u.is_online = 'True' "
